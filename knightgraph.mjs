@@ -24,7 +24,6 @@ class KnightGraph {
     }
 
     this.board[0][0] = this.#makeSquare(0, 0);
-    console.log('built');
     console.log(this.board[0][0]);
     console.log(this.board);
   }
@@ -37,7 +36,7 @@ class KnightGraph {
     const square = new ChessSquare(rank, file);
     this.board[rank][file] = square;
 
-    for (let move of KNIGHTMOVES) {
+    for (const move of KNIGHTMOVES) {
       let neighbour = this.#makeSquare(rank + move.rank, file + move.file);
       if (neighbour) square.neighbours.push(neighbour);
     }
@@ -45,11 +44,66 @@ class KnightGraph {
     return square;
   }
 
+  move(start, end) {
+    if (!this.isValid(start[0], start[1])) return [];
+    if (!this.isValid(end[0], end[1])) return [];
+
+    start = this.board[start[0]][start[1]];
+    end = this.board[end[0]][end[1]];
+
+    const visited = [];
+    for (let rank = 0; rank < BOARDSIZE; ++rank) {
+      visited.push([]);
+    }
+    const path = this.#getPath(start, end, visited);
+    return path;
+  }
+
+  #getPath(start, end, visited, path = []) {
+    visited[start.rank][start.file] = true;
+
+    if (start.rank === end.rank && start.file === end.file) {
+      path.push(start);
+      return path;
+    }
+
+    path.push(start);
+
+    let shortestPath = null;
+    let length = Infinity;
+    for (const neighbour of start.neighbours) {
+      if (!visited[neighbour.rank][neighbour.file]) {
+        const pathCopy = [...path];
+        const visitedCopy = [];
+        for (let rank = 0; rank < BOARDSIZE; ++rank) {
+          visitedCopy.push([...visited[rank]]);
+        }
+
+        const p = this.#getPath(neighbour, end, visitedCopy, pathCopy);
+        if (p && p.length < length) {
+          shortestPath = p;
+          length = p.length;
+        }
+      }
+    }
+    return shortestPath;
+  }
+
+  printPath(start, end) {
+    const path = this.move(start, end);
+    const pathStrings = [];
+
+    for (const square of path) {
+      pathStrings.push(`[${square.rank}, ${square.file}]`);
+    }
+    console.log(pathStrings);
+  }
+
   printAdjacencyList() {
-    for (let rank of this.board) {
-      for (let square of rank) {
+    for (const rank of this.board) {
+      for (const square of rank) {
         const neighbourStrings = [];
-        for (let neighbour of square.neighbours) {
+        for (const neighbour of square.neighbours) {
           neighbourStrings.push(`[${neighbour.rank}, ${neighbour.file}]`);
         }
         console.log(
